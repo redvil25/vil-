@@ -1,0 +1,1279 @@
+openapi: 3.0.3
+info:
+  title: Mindful AI Sandbox API
+  version: 1.0.0
+  description: |
+    Mindful AI Sandbox is a student learning environment for building and experimenting
+    with cloud-native applications on AWS.
+
+    **Key Features:**
+    - User authentication and role-based access control (User, Admin)
+    - User profile management
+    - Admin user management
+
+    **Authentication:**
+    Most endpoints require JWT authentication via the `Authorization` header.
+    Use the `/auth/login` endpoint to obtain an access token.
+
+  contact:
+    name: Mindful AI Sandbox Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.example.com/dev
+    description: Development server
+  - url: https://api.example.com/staging
+    description: Staging server
+  - url: https://api.example.com/prod
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and account management
+  - name: Profile
+    description: User profile management
+  - name: Admin
+    description: Administrative operations and user management
+  - name: Health
+    description: Service health check
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ============================================================================
+  # AUTHENTICATION ENDPOINTS
+  # ============================================================================
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      description: Create a new user account. Default role is User.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              user:
+                summary: Register as User
+                value:
+                  email: user@example.com
+                  password: SecurePass123!
+                  username: student42
+                  role: User
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user
+      description: Login with email and password to receive access and refresh tokens.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: user@example.com
+              password: SecurePass123!
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: Use refresh token to obtain a new access token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            example:
+              refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user
+      description: Invalidate user session (client-side token removal).
+      security: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/confirm-signup:
+    post:
+      tags: [Authentication]
+      summary: Confirm email address
+      description: Verify email address using confirmation code sent via email.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmSignUpRequest'
+            example:
+              email: user@example.com
+              confirmationCode: '123456'
+      responses:
+        '200':
+          description: Email confirmed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request password reset
+      description: Send password reset code to user's email.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+            example:
+              email: user@example.com
+      responses:
+        '200':
+          description: Password reset code sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/confirm-forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Reset password
+      description: Reset password using confirmation code and new password.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmForgotPasswordRequest'
+            example:
+              email: user@example.com
+              confirmationCode: '123456'
+              newPassword: NewSecurePass123!
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ============================================================================
+  # PROFILE ENDPOINTS
+  # ============================================================================
+
+  /me:
+    get:
+      tags: [Profile]
+      summary: Get current user profile
+      description: Retrieve authenticated user's private profile (includes email).
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivateProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Profile]
+      summary: Update current user profile
+      description: Update profile information (username, bio, avatar).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            example:
+              username: student42
+              bio: Learning cloud-native development
+              avatarUrl: https://example.com/avatar.jpg
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}:
+    get:
+      tags: [Profile]
+      summary: Get public user profile
+      description: Retrieve public profile for any user (excludes email).
+      security: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+          example: user-123
+      responses:
+        '200':
+          description: Public profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfile'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ============================================================================
+  # ADMIN USER MANAGEMENT ENDPOINTS
+  # ============================================================================
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List all users
+      description: |
+        Retrieve a paginated list of all users. Can filter by role.
+        Returns summary information for each user including account status.
+        Admin only.
+      parameters:
+        - name: role
+          in: query
+          description: Filter users by role
+          schema:
+            type: string
+            enum: [User, Admin]
+          example: User
+        - name: limit
+          in: query
+          description: Maximum number of users to return (1-100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 20
+        - name: lastEvaluatedKey
+          in: query
+          description: Pagination key from previous response
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/users/{userId}:
+    get:
+      tags: [Admin]
+      summary: Get user details
+      description: |
+        Retrieve detailed information about a specific user including Cognito status.
+        Admin only.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID (UUID format)
+          schema:
+            type: string
+            format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserDetailsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Admin]
+      summary: Update user details
+      description: |
+        Update a user's profile or role.
+        Cannot modify your own account or other admin accounts.
+        Admin only.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID (UUID format)
+          schema:
+            type: string
+            format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUpdateUserRequest'
+            example:
+              username: updated_user
+              role: Admin
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+              example:
+                success: true
+                data:
+                  message: User updated successfully
+                meta:
+                  timestamp: "2024-01-15T10:30:00Z"
+                  requestId: req-123
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Admin]
+      summary: Delete user
+      description: |
+        Permanently delete a user account from both Cognito and DynamoDB.
+        Cannot delete your own account or other admin accounts.
+        Admin only.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID (UUID format)
+          schema:
+            type: string
+            format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+              example:
+                success: true
+                data:
+                  message: User deleted successfully
+                meta:
+                  timestamp: "2024-01-15T10:30:00Z"
+                  requestId: req-123
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/users/{userId}/enable:
+    post:
+      tags: [Admin]
+      summary: Enable user
+      description: |
+        Enable a disabled user account. Updates both Cognito and DynamoDB.
+        Cannot enable your own account or other admin accounts.
+        Admin only.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID (UUID format)
+          schema:
+            type: string
+            format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: User enabled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+              example:
+                success: true
+                data:
+                  message: User enabled successfully
+                meta:
+                  timestamp: "2024-01-15T10:30:00Z"
+                  requestId: req-123
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/users/{userId}/disable:
+    post:
+      tags: [Admin]
+      summary: Disable user
+      description: |
+        Disable a user account. Updates both Cognito and DynamoDB.
+        Disabled users cannot log in.
+        Cannot disable your own account or other admin accounts.
+        Admin only.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID (UUID format)
+          schema:
+            type: string
+            format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: User disabled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+              example:
+                success: true
+                data:
+                  message: User disabled successfully
+                meta:
+                  timestamp: "2024-01-15T10:30:00Z"
+                  requestId: req-123
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/users/{userId}/reset-password:
+    post:
+      tags: [Admin]
+      summary: Reset user password
+      description: |
+        Trigger a password reset email for the user via Cognito.
+        User will receive an email with a temporary password.
+        Admin only.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID (UUID format)
+          schema:
+            type: string
+            format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: Password reset email sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+              example:
+                success: true
+                data:
+                  message: Password reset email sent successfully
+                meta:
+                  timestamp: "2024-01-15T10:30:00Z"
+                  requestId: req-123
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ============================================================================
+  # HEALTH ENDPOINT
+  # ============================================================================
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns the health status of the API service.
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-11-01T21:03:23.065Z"
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+# ==============================================================================
+# COMPONENTS
+# ==============================================================================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /auth/login
+
+  schemas:
+    # =========================================================================
+    # ENUMS
+    # =========================================================================
+
+    UserRole:
+      type: string
+      enum: [User, Admin]
+      description: User role in the system
+
+    AccountStatus:
+      type: string
+      enum: [Active, Disabled]
+      description: User account status for admin management
+
+    # =========================================================================
+    # AUTHENTICATION SCHEMAS
+    # =========================================================================
+
+    RegisterRequest:
+      type: object
+      required: [email, password, username]
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: User password (min 8 chars, must include uppercase, lowercase, and number)
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[a-zA-Z0-9_-]+$'
+          description: Unique username (alphanumeric, underscore, hyphen only)
+        role:
+          $ref: '#/components/schemas/UserRole'
+          default: User
+
+    RegisterResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponseWrapper'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: "38510330-9041-70d5-010c-a30b00bd812d"
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                username:
+                  type: string
+                  example: "student42"
+                role:
+                  $ref: '#/components/schemas/UserRole'
+                message:
+                  type: string
+                  example: "User registered successfully. Please check your email for confirmation code."
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponseWrapper'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [user, tokens]
+              properties:
+                user:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                      example: "38510330-9041-70d5-010c-a30b00bd812d"
+                    email:
+                      type: string
+                      format: email
+                      example: "user@example.com"
+                    username:
+                      type: string
+                      example: "test_user"
+                    role:
+                      $ref: '#/components/schemas/UserRole'
+                    createdAt:
+                      type: string
+                      format: date-time
+                      description: User account creation timestamp
+                      example: "2025-10-28T06:35:13.807Z"
+                tokens:
+                  type: object
+                  required: [accessToken, refreshToken, expiresIn, tokenType]
+                  properties:
+                    accessToken:
+                      type: string
+                      description: JWT access token (expires in 15 minutes)
+                      example: "eyJraWQiOi..."
+                    refreshToken:
+                      type: string
+                      description: JWT refresh token (expires in 7 days)
+                      example: "eyJjdHkiOi..."
+                    idToken:
+                      type: string
+                      description: Cognito ID token
+                      example: "eyJraWQiOi..."
+                    expiresIn:
+                      type: integer
+                      description: Access token expiration time in seconds
+                      example: 900
+                    tokenType:
+                      type: string
+                      description: Token type (always Bearer)
+                      example: "Bearer"
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          description: Valid refresh token
+
+    RefreshTokenResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponseWrapper'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                  description: New JWT access token
+                  example: "eyJraWQiOi..."
+                expiresIn:
+                  type: integer
+                  description: Access token expiration time in seconds
+                  example: 900
+                tokenType:
+                  type: string
+                  description: Token type (always Bearer)
+                  example: "Bearer"
+
+    ConfirmSignUpRequest:
+      type: object
+      required: [email, confirmationCode]
+      properties:
+        email:
+          type: string
+          format: email
+        confirmationCode:
+          type: string
+          minLength: 6
+          maxLength: 6
+          description: 6-digit confirmation code sent via email
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ConfirmForgotPasswordRequest:
+      type: object
+      required: [email, confirmationCode, newPassword]
+      properties:
+        email:
+          type: string
+          format: email
+        confirmationCode:
+          type: string
+          minLength: 6
+          maxLength: 6
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+
+    # =========================================================================
+    # PROFILE SCHEMAS
+    # =========================================================================
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[a-zA-Z0-9_-]+$'
+        bio:
+          type: string
+          maxLength: 500
+        avatarUrl:
+          type: string
+          format: uri
+
+    PrivateProfile:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponseWrapper'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: "38510330-9041-70d5-010c-a30b00bd812d"
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                username:
+                  type: string
+                  example: "test_user"
+                role:
+                  $ref: '#/components/schemas/UserRole'
+                bio:
+                  type: string
+                  nullable: true
+                  example: "Learning cloud-native development"
+                avatarUrl:
+                  type: string
+                  nullable: true
+                  example: "https://example.com/avatar.jpg"
+                createdAt:
+                  type: string
+                  format: date-time
+                  example: "2025-10-28T06:35:13.807Z"
+                updatedAt:
+                  type: string
+                  format: date-time
+                  example: "2025-11-01T21:03:23.065Z"
+
+    PublicProfile:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponseWrapper'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: "38510330-9041-70d5-010c-a30b00bd812d"
+                username:
+                  type: string
+                  example: "test_user"
+                role:
+                  $ref: '#/components/schemas/UserRole'
+                bio:
+                  type: string
+                  nullable: true
+                  example: "Learning cloud-native development"
+                avatarUrl:
+                  type: string
+                  nullable: true
+                  example: "https://example.com/avatar.jpg"
+                createdAt:
+                  type: string
+                  format: date-time
+                  example: "2025-10-28T06:35:13.807Z"
+
+    UpdateProfileResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponseWrapper'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Profile updated successfully"
+                profile:
+                  type: object
+                  description: Updated profile data (structure same as PrivateProfile data field)
+
+    # =========================================================================
+    # ADMIN USER MANAGEMENT SCHEMAS
+    # =========================================================================
+
+    AdminUpdateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[a-zA-Z0-9_-]+$'
+          description: Updated username
+        role:
+          $ref: '#/components/schemas/UserRole'
+          description: Updated role
+        bio:
+          type: string
+          maxLength: 500
+          description: Updated bio
+
+    AdminUserSummary:
+      type: object
+      required: [userId, email, username, role, accountStatus, cognitoStatus, emailVerified, createdAt]
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: User's unique identifier
+        email:
+          type: string
+          format: email
+          description: User's email address
+        username:
+          type: string
+          description: User's display name
+        role:
+          $ref: '#/components/schemas/UserRole'
+        accountStatus:
+          $ref: '#/components/schemas/AccountStatus'
+        cognitoStatus:
+          type: string
+          description: User's Cognito status (CONFIRMED, UNCONFIRMED, etc.)
+        emailVerified:
+          type: boolean
+          description: Whether user's email is verified
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        lastActiveAt:
+          type: string
+          format: date-time
+          description: Last activity timestamp
+
+    AdminUserDetails:
+      allOf:
+        - $ref: '#/components/schemas/AdminUserSummary'
+        - type: object
+          required: [updatedAt, cognitoUserCreateDate, cognitoUserLastModifiedDate]
+          properties:
+            bio:
+              type: string
+              description: User's bio
+            avatarUrl:
+              type: string
+              format: uri
+              description: URL to user's avatar image
+            updatedAt:
+              type: string
+              format: date-time
+              description: Last profile update timestamp
+            cognitoUserCreateDate:
+              type: string
+              format: date-time
+              description: Cognito account creation date
+            cognitoUserLastModifiedDate:
+              type: string
+              format: date-time
+              description: Cognito account last modified date
+
+    AdminUserListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required: [users, pagination]
+          properties:
+            users:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminUserSummary'
+            pagination:
+              type: object
+              required: [limit, hasMore]
+              properties:
+                limit:
+                  type: integer
+                  description: Maximum items per page
+                lastKey:
+                  type: string
+                  description: Pagination key for next page
+                hasMore:
+                  type: boolean
+                  description: Whether more pages exist
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    AdminUserDetailsResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/AdminUserDetails'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    SuccessMessageResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+              description: Success message
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    # =========================================================================
+    # COMMON SCHEMAS
+    # =========================================================================
+
+    ResponseMeta:
+      type: object
+      required: [timestamp, requestId]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Server timestamp when response was generated
+          example: "2025-11-01T21:03:23.065Z"
+        requestId:
+          type: string
+          format: uuid
+          description: Unique request ID for debugging and tracing
+          example: "ca1fec38-e588-4be7-acbc-921575189fbe"
+
+    SuccessResponseWrapper:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          description: Indicates successful response
+          example: true
+        data:
+          description: Response payload (structure varies by endpoint, can be object or array)
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    ErrorResponseWrapper:
+      type: object
+      required: [success, error, meta]
+      properties:
+        success:
+          type: boolean
+          description: Indicates failed response
+          example: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Error code for client-side error handling
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Invalid input data"
+            details:
+              type: object
+              nullable: true
+              description: Additional error details (field-level errors, etc.)
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    MessageResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponseWrapper'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            details:
+              type: object
+              nullable: true
+              description: Additional error details
+        requestId:
+          type: string
+          description: Unique request ID for debugging
+
+  responses:
+    ValidationError:
+      description: Validation error (invalid request data)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseWrapper'
+          example:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: Validation failed
+              details:
+                validationErrors:
+                  - field: email
+                    message: Invalid email format
+            meta:
+              timestamp: "2025-11-01T21:03:23.065Z"
+              requestId: "ca1fec38-e588-4be7-acbc-921575189fbe"
+
+    UnauthorizedError:
+      description: Unauthorized (missing or invalid authentication)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseWrapper'
+          example:
+            success: false
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
+            meta:
+              timestamp: "2025-11-01T21:03:23.065Z"
+              requestId: "ca1fec38-e588-4be7-acbc-921575189fbe"
+
+    ForbiddenError:
+      description: Forbidden (insufficient permissions)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseWrapper'
+          example:
+            success: false
+            error:
+              code: FORBIDDEN
+              message: You do not have permission to perform this action
+            meta:
+              timestamp: "2025-11-01T21:03:23.065Z"
+              requestId: "ca1fec38-e588-4be7-acbc-921575189fbe"
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseWrapper'
+          example:
+            success: false
+            error:
+              code: NOT_FOUND
+              message: Resource not found
+            meta:
+              timestamp: "2025-11-01T21:03:23.065Z"
+              requestId: "ca1fec38-e588-4be7-acbc-921575189fbe"
+
+    ConflictError:
+      description: Conflict (resource already exists or state conflict)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseWrapper'
+          example:
+            success: false
+            error:
+              code: CONFLICT
+              message: Resource already exists
+            meta:
+              timestamp: "2025-11-01T21:03:23.065Z"
+              requestId: "ca1fec38-e588-4be7-acbc-921575189fbe"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseWrapper'
+          example:
+            success: false
+            error:
+              code: INTERNAL_ERROR
+              message: An unexpected error occurred
+            meta:
+              timestamp: "2025-11-01T21:03:23.065Z"
+              requestId: "ca1fec38-e588-4be7-acbc-921575189fbe"

@@ -1,0 +1,13 @@
+# Example Terraform Variables File
+# Copy this file to terraform.tfvars and customize for your environment
+
+environment  = "dev"
+project_name = "my-sandbox"
+aws_region   = "us-west-2"
+
+common_tags = {
+  Project     = "Sandbox"
+  Environment = "dev"
+  ManagedBy   = "Terraform"
+  Owner       = "your-name"
+}

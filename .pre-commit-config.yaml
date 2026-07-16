@@ -1,0 +1,102 @@
+---
+# Pre-commit hooks for code quality and security checks
+# https://pre-commit.com/
+#
+# This config chains two systems:
+#   1. Python pre-commit: Terraform security (tfsec, Checkov) + Semgrep SAST
+#   2. Husky: Frontend/Backend (Jest tests, ESLint, TypeScript)
+#
+# Installation:
+#   pip install pre-commit semgrep
+#   pre-commit install
+#
+# Run manually:
+#   pre-commit run --all-files
+
+repos:
+  # Terraform-specific hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.83.5
+    hooks:
+      - id: terraform_fmt
+        name: Terraform Format
+        description: Format Terraform files
+
+      - id: terraform_validate
+        name: Terraform Validate
+        description: Validate Terraform configuration
+
+      - id: terraform_tfsec
+        name: tfsec Security Scan
+        description: Run tfsec security scanner
+        args:
+          - --args=--minimum-severity=MEDIUM
+          - --args=--config-file=.tfsec/config.yml
+
+      - id: terraform_checkov
+        name: Checkov Security Scan
+        description: Run Checkov security scanner
+        args:
+          - --args=--compact
+          - --args=--framework=terraform
+          - --args=--download-external-modules=true
+          - --args=--skip-check=CKV_AWS_111
+          - --args=--skip-check=CKV_AWS_356
+          - --args=--skip-check=CKV_AWS_116
+          - --args=--skip-check=CKV_AWS_173
+          - --args=--skip-check=CKV_AWS_115
+          - --args=--skip-check=CKV_AWS_117
+          - --args=--skip-check=CKV_AWS_158
+          - --args=--skip-check=CKV_AWS_338
+          - --args=--skip-check=CKV_AWS_272
+
+  # General code quality hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim Trailing Whitespace
+        description: Remove trailing whitespace
+
+      - id: end-of-file-fixer
+        name: Fix End of Files
+        description: Ensure files end with newline
+
+      - id: check-yaml
+        name: Check YAML Syntax
+        description: Validate YAML files
+
+      - id: check-merge-conflict
+        name: Check Merge Conflicts
+        description: Detect merge conflict markers
+
+  # Semgrep SAST security scanning (on changed TS/JS files only)
+  - repo: https://github.com/semgrep/pre-commit
+    rev: v1.150.0
+    hooks:
+      - id: semgrep
+        name: Semgrep Security Scan
+        description: Run Semgrep SAST on changed TypeScript/JavaScript files
+        args:
+          - --config
+          - p/owasp-top-ten
+          - --config
+          - p/typescript
+          - --config
+          - .semgrep/
+          - --error
+          - --severity=ERROR
+          - --skip-unknown-extensions
+        types_or: [ts, tsx, javascript, jsx]
+        exclude: ^(scripts/|test-|frontend/e2e/|backend/src/scripts/)
+
+  # Chain Husky hooks (runs Jest tests, ESLint, TypeScript checks)
+  - repo: local
+    hooks:
+      - id: husky-pre-commit
+        name: Husky Pre-commit (Tests, Lint, TypeCheck)
+        entry: sh .husky/pre-commit
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]

@@ -1,0 +1,62 @@
+---
+# Checkov configuration file
+# https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html
+
+framework:
+  - terraform
+
+# Skip specific checks with justification
+skip-check:
+  # IAM Module - False positives from variable defaults (real ARNs passed in staging)
+  - CKV_AWS_111  # IAM policies allow write access - scoped via variables to specific resources
+  - CKV_AWS_356  # IAM policies use wildcard resources - only for defaults, real ARNs passed in usage
+
+  # Lambda Module - Best practice enhancements deferred to Phase 3
+  - CKV_AWS_116  # DLQ configuration - not critical for MVP, planned for Phase 3
+  - CKV_AWS_173  # Lambda env var encryption - using AWS managed keys, KMS planned for Phase 3
+  - CKV_AWS_115  # Concurrent execution limits - not needed for MVP scale
+  - CKV_AWS_117  # VPC configuration - not required for public API, adds complexity
+  - CKV_AWS_158  # CloudWatch KMS encryption - using AWS managed keys, planned for Phase 3
+  - CKV_AWS_338  # CloudWatch log retention - using default retention, will configure in Phase 3
+  - CKV_AWS_272  # Code signing - not required for MVP, will implement for production
+
+  # Dashboard Bucket - Intentionally public for E2E test results dashboard
+  - CKV_AWS_53   # Block public ACLs - dashboard needs public read access
+  - CKV_AWS_54   # Block public policy - dashboard needs public read access
+  - CKV_AWS_55   # Ignore public ACLs - dashboard needs public read access
+  - CKV_AWS_56   # Restrict public buckets - dashboard needs public read access
+  - CKV_AWS_70   # S3 action with any Principal - dashboard allows public GetObject
+  - CKV2_AWS_6   # S3 Public Access block - intentionally public for dashboard
+
+  # S3 Best Practices - Deferred to Phase 3
+  - CKV_AWS_18   # S3 access logging - using CloudWatch, dedicated logging planned for Phase 3
+  - CKV_AWS_21   # S3 versioning - enabled on stories bucket, not needed for uploads/dashboard
+  - CKV_AWS_144  # S3 cross-region replication - not required for MVP, single region
+  - CKV_AWS_145  # S3 KMS encryption - using AES256, KMS planned for Phase 3
+  - CKV_AWS_300  # S3 lifecycle abort failed uploads - will configure in Phase 3
+  - CKV2_AWS_62  # S3 event notifications - not needed for MVP use case
+
+  # API Gateway - MVP Configuration
+  - CKV_AWS_59   # Open API access - auth endpoints must be public, protected routes use Cognito authorizer
+  - CKV_AWS_120  # API Gateway caching - not needed for MVP scale, adds cost
+  - CKV_AWS_225  # Method setting caching - not needed for MVP scale
+  - CKV_AWS_237  # Create before destroy - using depends_on for deployment ordering
+  - CKV2_AWS_29  # WAF protection - planned for production, not needed for staging
+  - CKV2_AWS_51  # Client certificate auth - using Cognito JWT auth instead
+  - CKV2_AWS_53  # Request validation - validation done in Lambda handlers with Zod
+
+  # Amplify Module - App uses Cognito for authentication
+  - CKV_AWS_46   # Amplify basic auth - not needed, app uses Cognito auth
+
+  # Other Infrastructure - Deferred to Phase 3
+  - CKV_AWS_26   # SNS topic encryption - using AWS managed keys, KMS planned for Phase 3
+  - CKV_AWS_119  # DynamoDB KMS CMK - using AWS managed encryption, CMK planned for Phase 3
+
+# Fail build on security issues
+soft-fail: false
+
+# Compact output (less verbose)
+compact: true
+
+# Download external modules for scanning
+download-external-modules: true

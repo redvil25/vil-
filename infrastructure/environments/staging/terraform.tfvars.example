@@ -1,0 +1,37 @@
+# Terraform Variables for Staging Environment
+# Copy this file to terraform.tfvars and fill in your values:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# terraform.tfvars is git-ignored -- your secrets stay local.
+#
+# IMPORTANT: Secrets (access tokens, OAuth secrets) go in .env, not here.
+# See .env.example for details.
+
+# === Required: Your Project Identity ===
+project_name = "my-sandbox"
+aws_region   = "us-west-2"
+
+# === Required: Your GitHub Repository ===
+# Format: "owner/repo" -- used for GitHub Actions OIDC and Amplify
+github_repository = "your-username/your-repo"
+
+# === Required: CloudWatch Alarm Notifications ===
+# You will receive an email to confirm the SNS subscription after first deploy
+alarm_email = "your-email@example.com"
+
+# === Optional: Google OAuth ===
+# See https://console.cloud.google.com/apis/credentials to create OAuth credentials
+# google_client_id = ""
+
+# === Optional: Email Customization ===
+# Cognito sender and reply-to addresses (requires SES verified identity for custom domains)
+# from_email_address     = "noreply@example.com"
+# reply_to_email_address = "support@example.com"
+
+# === Resource Tags ===
+common_tags = {
+  Project     = "Sandbox"
+  Environment = "staging"
+  ManagedBy   = "Terraform"
+  Owner       = "your-name"
+}

@@ -1,0 +1,155 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Dependency directories
+jspm_packages/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+next-env.d.ts
+
+# Environment variables (all .env files except templates/examples)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-*
+
+# Claude Code
+**/.claude/settings.local.json
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+terraform.tfplan
+tfplan
+crash.log
+crash.*.log
+**/full-plan.txt
+**/terraform-plan-output.txt
+
+# AWS
+.aws/
+*.pem
+
+# Secrets
+secrets/
+*.key
+*.cert
+credentials.json
+service-account*.json
+
+# Test coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# ZAP DAST scan reports
+reports/zap-*
+
+# Test reports and results
+playwright-report/
+playwright-report-dev/
+test-results/
+*.spec.ts.backup
+*.spec.tsx.backup
+test-results*.json
+test-history*.json
+test-output.txt
+test-list-sample.json
+NUL
+
+# Lint outputs
+lint-*.txt
+lint-output.txt
+lint-results.txt
+lint-final.txt
+
+# Temporary files
+tmp/
+temp/
+Backup/
+*.tmp
+*.bak
+
+# Package manager
+# Note: package-lock.json is committed for reproducible builds and CI caching
+yarn.lock
+pnpm-lock.yaml
+
+# Amplify CLI (root-level only, not Terraform modules)
+/amplify/
+/.amplify/
+
+# Lambda
+lambda-*.zip
+backend/.builds/
+
+# Local development
+.cache/
+.parcel-cache/
+
+# Debug
+.vscode-test/
+*.tsbuildinfo
+temp-dashboard-data/
+scripts/manual-update-dashboard.js
+scripts/test-dashboard-processing.js
+scripts/Health/health-dashboard.png
+
+# Plans and drafts (kept locally, shared via Jira)
+docs/plans/
+
+tmp-*.json
+# Temporary analysis/test files (local development artifacts)
+temp-*.js
+temp-*.md
+temp-*.txt
+temp-*.json
+temp-*.py
+manual-*.json
+e2e-results-*.json
+latest-run.json
+latest-*.json
+test-e2e-mode.js
+test-tokens.js
+*-test-results.json
+[0-9]*.json
+frontend/test-summary.json
+temp-test-results.json
+config/
