@@ -36,9 +36,9 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-cognito-identity-provider": "^3.1064.0",
-    "@aws-sdk/client-dynamodb": "^3.1064.0",
-    "@aws-sdk/lib-dynamodb": "^3.1064.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.1090.0",
+    "@aws-sdk/client-dynamodb": "^3.1090.0",
+    "@aws-sdk/lib-dynamodb": "^3.1090.0",
     "@aws-sdk/util-dynamodb": "^3.993.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
