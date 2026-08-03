@@ -207,7 +207,7 @@ jobs:
             backend/src/
 
       - name: Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v3.37.4
         if: always() && steps.semgrep.outcome != 'cancelled'
         continue-on-error: true
         with:
